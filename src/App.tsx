@@ -11,6 +11,7 @@ function App() {
     const storedToken = localStorage.getItem("token");
     const [token, setToken] = useState<string>(storedToken && storedToken !== "undefined" ? storedToken : "");
     const [api, setApi] = useState<any>(null);
+    const [apiError, setApiError] = useState<string | null>(null);
 
     const [customer, setCustomer] = useState<Customer | null>(null);
     const [paybox, setPaybox] = useState<Paybox | null>(null);
@@ -22,8 +23,13 @@ function App() {
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
-        if (token) {
-            setApi(createApiClient(token));
+        if (token && token !== "undefined") {
+            try {
+                setApi(createApiClient(token));
+                setApiError(null);
+            } catch (err: any) {
+                setApiError(err.message);
+            }
         }
     }, [token]);
 
@@ -32,31 +38,25 @@ function App() {
         setToken(newToken);
     };
 
+    const handleLogout = () => {
+        localStorage.removeItem("token");
+        setToken("");
+        setApi(null);
+        setCustomer(null);
+        setPaybox(null);
+        setOrganization(null);
+        setWarehouse(null);
+        setPriceType(null);
+        setCart([]);
+    };
+
     const validate = () => {
-        if (!customer) {
-            alert("Выберите клиента");
-            return false;
-        }
-        if (!paybox) {
-            alert("Выберите счёт");
-            return false;
-        }
-        if (!organization) {
-            alert("Выберите организацию");
-            return false;
-        }
-        if (!warehouse) {
-            alert("Выберите склад");
-            return false;
-        }
-        if (!priceType) {
-            alert("Выберите тип цен");
-            return false;
-        }
-        if (cart.length === 0) {
-            alert("Добавьте хотя бы один товар");
-            return false;
-        }
+        if (!customer) { alert("Выберите клиента"); return false; }
+        if (!paybox) { alert("Выберите счёт"); return false; }
+        if (!organization) { alert("Выберите организацию"); return false; }
+        if (!warehouse) { alert("Выберите склад"); return false; }
+        if (!priceType) { alert("Выберите тип цен"); return false; }
+        if (cart.length === 0) { alert("Добавьте хотя бы один товар"); return false; }
         return true;
     };
 
@@ -90,13 +90,27 @@ function App() {
         return <TokenInput onTokenSubmit={handleTokenSubmit} />;
     }
 
+    if (apiError) {
+        return (
+            <div className="min-h-screen flex items-center justify-center p-4 bg-gray-50">
+                <div className="text-center">
+                    <p className="text-red-500 mb-4">Ошибка: {apiError}</p>
+                    <button onClick={handleLogout} className="text-blue-500 underline">Ввести другой токен</button>
+                </div>
+            </div>
+        );
+    }
+
     if (!api) {
-        return <div className="p-4">Загрузка API...</div>;
+        return <div className="p-4 text-center">Загрузка...</div>;
     }
 
     return (
         <div className="max-w-md mx-auto p-4 pb-24 space-y-6 bg-gray-50 min-h-screen">
-            <h1 className="text-xl font-bold text-center">Оформление заказа</h1>
+            <div className="flex justify-between items-center">
+                <h1 className="text-xl font-bold">Оформление заказа</h1>
+                <button onClick={handleLogout} className="text-sm text-red-500 underline">Выйти</button>
+            </div>
 
             <CustomerSearch api={api} onSelect={setCustomer} selected={customer} />
             <SelectField label="Счёт" fetch={api.getPayboxes} value={paybox} onChange={setPaybox} />

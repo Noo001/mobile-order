@@ -1,17 +1,13 @@
 const BASE_URL = 'https://app.tablecrm.com/api/v1';
 
 export function createApiClient(token: string) {
-    const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-    };
-
     const request = async <T>(endpoint: string, options?: RequestInit): Promise<T> => {
         const url = new URL(`${BASE_URL}${endpoint}`);
         url.searchParams.append('token', token);
         const res = await fetch(url.toString(), {
             ...options,
             headers: {
-                ...headers,
+                'Content-Type': 'application/json',
                 ...options?.headers,
             },
         });
